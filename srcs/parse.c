@@ -1,5 +1,6 @@
 
 # include <ft_malcolm.h>
+# include <arpa/inet.h>
 
 err_t   parse_args(int ac, const char* av[], proginfo_t* const info)
 {
@@ -36,7 +37,10 @@ err_t   parse_args(int ac, const char* av[], proginfo_t* const info)
         }
     }
 
-    ///TODO: Init sockaddr
+    (*(struct sockaddr_in*)&info->target.addr) = (struct sockaddr_in){
+        .sin_family = AF_INET,
+        .sin_addr = inet_addr(av[2]),
+    };
 
     info->mymachine.ip = av[0];
     info->mymachine.mac = av[1];

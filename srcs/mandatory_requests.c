@@ -1,7 +1,9 @@
 
+# include <ft_malcolm.h>
 # include <arp.h>
 
-# include <netinet/ether.h>
+# include <linux/if_ether.h>
+# include <netinet/if_ether.h>
 # include <stdio.h>
 
 err_t   mandatory_requests(const proginfo_t* const info)
@@ -10,17 +12,17 @@ err_t   mandatory_requests(const proginfo_t* const info)
 
     err_t st = SUCCESS;
 
-    // 1) Print avalaible interfaces
-    ///TODO: Need to end parse, read man ...
-    printf("Found available interface: %s\n", "<!<!<!<!<! TODO !>!>!>!>!>");
-
-    // 2) Broadcast an ARP REQUEST to target
-    if ((st = send_arp_request_to_target(info, true)) != SUCCESS)
+    // 1) Print avalaible phisical interface (NIC)
+    if ((st = printf_ifnic()) != SUCCESS)
         goto error;
-    ///QUESTION: I can have more than one response if i broadcast, no ? (i asume yes)
+
+    // 2.1) Broadcast an ARP REQUEST to target
+    if ((st = send_arp_request_to_target(info)) != SUCCESS)
+        goto error;
 
     printf("%s\n", "An ARP request has been broadcast.");
 
+    // 2.2) Receive ARP REPLY form target
     uint8_t buff[255];
     struct sockaddr saddr;
     const ssize_t recvbytes = recvfrom(
@@ -41,17 +43,16 @@ err_t   mandatory_requests(const proginfo_t* const info)
 
     const struct ether_arp* const arp = (const struct ether_arp*)buff;
 
-    printf("\tmac address of request: %x:%x:%x:%x:%x:%x\n",
-    arp.arp_sha[0], arp_sha[1], arp_sha[2],arp_sha[3], arp_sha[4], arp_sha[5]);
-    printf("\tIP address of request: %hhu:%hhu%:hhu%:hhu\n", arp_spa[0], arp_spa[1],arp_spa[2], arp_spa[3]);
+    // 2.3) Print received hardware address & ip address
+    printf("%s", "\tmac address of request: ");
+    PRINT_MAC(arp.arp_sha, true);
+    printf("%s", "\tIP address of request:");
+    PRINT_IP(arp_tpa, true);
 
     // 3) Send ARP REPLY to target
-
     printf("%s\n", "Now sending an ARP reply to the target address with spoofed source, please wait...");
-
-    if ((st = send_arp_reply_to_target(info, false)) != SUCCESS)
+    if ((st = send_arp_reply_to_target(info)) != SUCCESS)
         goto error;
-
     printf("%s\n", "Sent an ARP reply packet, you may now check the arp table on the target.\nExiting program...");
 
 error:

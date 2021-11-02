@@ -14,7 +14,7 @@ typedef struct	proginfo
 {
 	node_t		mymachine;
 	node_t		target;
-	node_t		router; // for further implementation
+	node_t		router;
 	int			socksend;
 	int			sockrecv;
 }				proginfo_t;

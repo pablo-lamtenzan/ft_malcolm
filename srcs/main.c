@@ -45,7 +45,7 @@ int	main(int ac, const char* av[])
 	if (av == NULL)
 		st = mandatory_requests((const proginfo_t*)&info);
 	else
-		st = man_of_the_middle(av, (const proginfo_t*)&info);
+		st = man_of_the_middle(av, (const proginfo_t*)&info, &unpoison);
 error:
 	terminate();
 	return st;
