@@ -11,7 +11,7 @@
 # define HARWARE_TYPE 1
 # define ARP_REQUEST 1
 # define ARP_REPLY 2
-# define ETHER_BROADCAST_MAC (uint8_t[]){ 0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF }
+# define ETHER_BROADCAST_MAC (uint8_t[SIZEOFMAC]){ 0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF }
 
 # define PRINT_MAC(x, endl) (													\
 		printf("%x:%x:%x:%x:%x:%x%s",											\
