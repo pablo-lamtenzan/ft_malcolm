@@ -16,8 +16,8 @@ static void terminate()
 		reset_arp_router(ginfoptr);
 		reset_arp_target(ginfoptr);
 	}
-	close(ginfoptr->socksend);
-	close(ginfoptr->sockrecv);
+	close(ginfoptr->sockarp);
+	close(ginfoptr->sockip);
 	exit(EXIT_SUCCESS);
 }
 

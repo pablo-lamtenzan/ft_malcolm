@@ -2,7 +2,6 @@
 # include <ft_malcolm.h>
 # include <arp.h>
 
-# include <linux/if_ether.h>
 # include <netinet/if_ether.h>
 # include <stdio.h>
 
@@ -16,7 +15,7 @@ err_t   mandatory_requests(const proginfo_t* const info)
     if ((st = printf_ifnic()) != SUCCESS)
         goto error;
 
-    // 2.1) Broadcast an ARP REQUEST to target
+    // 2.1) Broadcast an ARP REQUEST to the network
     if ((st = send_arp_request_to_target(info)) != SUCCESS)
         goto error;
 
@@ -26,7 +25,7 @@ err_t   mandatory_requests(const proginfo_t* const info)
     uint8_t buff[255];
     struct sockaddr saddr;
     const ssize_t recvbytes = recvfrom(
-        info->sockrecv,
+        info->sockarp,
         buff,
         sizeof(buff) / sizeof(*buff),
         0,
@@ -41,7 +40,7 @@ err_t   mandatory_requests(const proginfo_t* const info)
         goto error;
     }
 
-    const struct ether_arp* const arp = (const struct ether_arp*)buff;
+    const struct ether_arp* const arp = (const struct ether_arp*)(buff + sizeof(struct ethhdr));
 
     // 2.3) Print received hardware address & ip address
     printf("%s", "\tmac address of request: ");
