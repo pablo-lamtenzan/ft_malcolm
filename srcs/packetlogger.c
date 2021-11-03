@@ -5,12 +5,13 @@
 # include <sys/types.h>
 # include <stdio.h>
 # include <stdbool.h>
-# include <linux/if_ether.h>
-# include <linux/ip.h>
-# include <linux/tcp.h>
-# include <linux/udp.h>
-# include <linux/icmp.h>
 # include <netdb.h>
+# include <netdb.h>
+# include <netinet/if_ether.h>
+# include <netinet/ip.h>
+# include <netinet/tcp.h>
+# include <netinet/udp.h>
+# include <netinet/ip_icmp.h>
 
 # define DEFAULTLOGNAME "mitm_log.txt"
 
@@ -99,14 +100,27 @@
 \t-dest (uint16_t): %hu\n\
 \t-len (uint16_t): %hu\n\
 \t-check (uint16_t): %hu\n\n",														\
-		(udp).len,																	\
+		sizeof(udp),																	\
 		(udp).source,																\
 		(udp).dest,																	\
 		(udp).len,																	\
 		(udp).check)																\
 )
 
-# define PRINT_ICMPHDR(fd, icp) ()
+# define PRINT_ICMPHDR(fd, icp) (													\
+		dprintf(fd, "\n*** ICMP HEADER (%lu)***\n\
+\t-type (uint8_t): %hhu\n\
+\t-code (uint8_t): %hhu\n\
+\t-checksum (unt16_t): %hu\n\
+\t-id | __glibbc_reserved (uint16_t): %hu\n\
+\t-sequece | mtu (uint16_t): %hu\n",												\
+		sizeof(icp),																\
+		(icp).type,																	\
+		(icp).code,																	\
+		(icp).checksum,																\
+		(icp).un.echo.id,																	\
+		(icp).un.echo.sequence)																\
+)
 
 # define PRINT_PAYLOAD(fd, payload, payloadlen)										\
 		for (ssize_t i = 0 ; i < (payloadlen) ; i++)								\
@@ -132,12 +146,12 @@ void log_content(uint8_t* const content, ssize_t contentlen)
 
 	if (openonce == false)
 	{
-		openonce = true;
-		if ((logfd = open(DEFAULTLOGNAME, O_CREAT | O_WRONLY)) < 0)
+		if ((logfd = open(DEFAULTLOGNAME, O_CREAT | O_WRONLY | O_APPEND)) < 0)
 			return ;
+		openonce = true;
 	}
 
-		PRINT_START_PACKET(logfd, contentlen);
+	PRINT_START_PACKET(logfd, contentlen);
 
 	if (contentlen < sizeof(struct ethhdr))
 	{
@@ -155,10 +169,6 @@ void log_content(uint8_t* const content, ssize_t contentlen)
 		return ;
 	}
 
-	///TODO: Also must forward ARP request & replies (spoofing data)
-	/// All IP's & MAC's has the same lenght so it will be easy to do it
-	/// IF THERE'S NO CHECKSUM AT ETH LAYER
-
 	const struct iphdr* const ip = (const struct iphdr*)(content + sizeof(*eth));
 	PRINT_IPHDR(logfd, *ip);
 
@@ -175,26 +185,33 @@ void log_content(uint8_t* const content, ssize_t contentlen)
 			}
 			const struct tcphdr* const tcp = (const struct tcphdr*)(content + sizeof(*eth) + iphl);
 			PRINT_TCPHDR(logfd, *tcp);
-			transport_len = tcp->doff;
+			transport_len = tcp->doff * 4;
 			break ;
 
 		case IPPROTO_UDP:
-			if (contentlen < sizeof(*eth) + iphl + sizeof(struct updhdr*))
+			if (contentlen < sizeof(*eth) + iphl + sizeof(struct udphdr))
 			{
 				PRINT_END_PACKET(logfd, contentlen);
 				return ;
 			}
 			const struct udphdr* const udp = (const struct udphdr*)(content + sizeof(*eth) + iphl);
 			PRINT_UDPHDR(logfd, *udp);
-			transport_len = udp->len;
+			transport_len = sizeof(*udp);
 			break ;
 
 		case IPPROTO_ICMP:
+			if (contentlen < sizeof(*eth) + iphl + sizeof(struct icmphdr))
+			{
+				PRINT_END_PACKET(logfd, contentlen);
+				return ;
+			}
+			const struct icmphdr* const icp = (const struct icmphdr*)(content + sizeof(*eth) + iphl);
+			PRINT_ICMPHDR(logfd, *icp);
 			PRINT_END_PACKET(logfd, contentlen);
 			return ;
 
 		default:
-			;
+			return ;
 	}
 
 	if (transport_len)
@@ -204,5 +221,7 @@ void log_content(uint8_t* const content, ssize_t contentlen)
 		PRINT_PAYLOAD(logfd, payload, contentlen - metadatalen);
 	}
 
+	close(logfd);
+	openonce = false;
 	PRINT_END_PACKET(logfd, contentlen);
 }
