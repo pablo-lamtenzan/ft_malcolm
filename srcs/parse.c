@@ -88,6 +88,8 @@ err_t   parse_optional_args(const char* av[], proginfo_t* const info, bool* cons
 		st = INVARG;
 		goto error;
 	}
+    info->router.ip = *(av - 1);
+    info->router.mac = *av;
 	if (*(++av) && ft_strncmp(STDOUTOPT, *av, sizeof(STDOUTOPT)) == 0)
 		*isstdout = true;
 	else if (*av)
@@ -101,6 +103,8 @@ err_t   parse_optional_args(const char* av[], proginfo_t* const info, bool* cons
         .sin_family = AF_INET,
         .sin_addr = ip,
     };
+
+
 
 error:
 	return st;
