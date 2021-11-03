@@ -138,18 +138,23 @@
 		dprintf(fd, "\n\n############ END PACKET (%ld) ############\n\n", len)		\
 )
 
-void log_content(uint8_t* const content, ssize_t contentlen)
+void log_content(uint8_t* const content, ssize_t contentlen, bool isstdout)
 {
 	static bool openonce = false;
 
 	int logfd;
 
-	if (openonce == false)
+	if (isstdout == false)
 	{
-		if ((logfd = open(DEFAULTLOGNAME, O_CREAT | O_WRONLY | O_APPEND)) < 0)
-			return ;
-		openonce = true;
+		if (openonce == false)
+		{
+			if ((logfd = open(DEFAULTLOGNAME, O_CREAT | O_WRONLY | O_APPEND)) < 0)
+				return ;
+			openonce = true;
+		}
 	}
+	else
+		logfd = STDOUT_FILENO;
 
 	PRINT_START_PACKET(logfd, contentlen);
 
@@ -221,7 +226,10 @@ void log_content(uint8_t* const content, ssize_t contentlen)
 		PRINT_PAYLOAD(logfd, payload, contentlen - metadatalen);
 	}
 
-	close(logfd);
-	openonce = false;
+	if (isstdout == false)
+	{
+		close(logfd);
+		openonce = false;
+	}
 	PRINT_END_PACKET(logfd, contentlen);
 }

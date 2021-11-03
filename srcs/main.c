@@ -5,6 +5,8 @@
 # include <stdlib.h>
 # include <signal.h>
 
+# define ROOT_UID 0
+
 volatile sig_atomic_t	unpoison = 0;
 const proginfo_t*		ginfoptr;
 
@@ -25,6 +27,13 @@ int	main(int ac, const char* av[])
 {
 	err_t		st = SUCCESS;
 	proginfo_t	info = {0};
+
+	if (getuid() != ROOT_UID)
+	{
+		PRINT_ERROR("%s", MSG_ERROR_NEED_PRIV);
+		st = INVPRIV;
+		goto error;
+	}
 
 	if ((st = parse_args(ac, ++av, &info)) != SUCCESS)
 		goto error;
