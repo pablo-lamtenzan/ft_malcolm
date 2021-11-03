@@ -8,7 +8,7 @@ err_t   parse_args(int ac, const char* av[], proginfo_t* const info)
 
     if (ac - 1 < MINARGNUM)
 	{
-        ///TODO: Some error message
+       PRINT_ERROR("%s", MSG_USAGE);
 		st = INVARG;
         goto error;
 	}
@@ -20,7 +20,7 @@ err_t   parse_args(int ac, const char* av[], proginfo_t* const info)
             ///TODO: Check for valid ip address
             if (0/* error */)
             {
-                ///TODO: Some error message
+                PRINT_ERROR(MSG_ERROR_INVIP, av[i]);
                 st = INVARG;
                 goto error;
             }
@@ -30,7 +30,7 @@ err_t   parse_args(int ac, const char* av[], proginfo_t* const info)
             ///TODO: Check for valid mac address
             if (0/* error */)
             {
-                ///TODO: Some error message
+                PRINT_ERROR(MSG_ERROR_INVMAC, av[i]);
                 st = INVARG;
                 goto error;
             }

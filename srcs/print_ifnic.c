@@ -13,7 +13,7 @@ err_t printf_ifnic()
 
     if (getifaddrs(&ifap) < 0)
     {
-        ///TODO: Print some error
+        PRINT_ERROR(MSG_ERROR_SYSCALL, "getifaddrs");
         return INVSYSCALL;
     }
 
@@ -31,6 +31,7 @@ err_t printf_ifnic()
 
     printf("Found available interface: %s\n", ptr ? ptr : "(none)");
     /// If found == (none) there's a problem ...
+    ///TODO: Stop program ?
 
     freeifaddrs(ifap);
     return SUCCESS;

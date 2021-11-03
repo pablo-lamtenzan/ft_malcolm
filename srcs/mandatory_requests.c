@@ -35,7 +35,7 @@ err_t   mandatory_requests(const proginfo_t* const info)
 
     if (recvbytes < 0)
     {
-        ///TODO: Print some error msg
+        PRINT_ERROR(MSG_ERROR_SYSCALL, "recvfrom");
         st = INVSYSCALL;
         goto error;
     }

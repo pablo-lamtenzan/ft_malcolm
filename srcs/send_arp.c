@@ -29,7 +29,7 @@ const uint8_t* src_mac, const uint8_t* dest_mac)
 
     if (sentbytes < 0)
     {
-        ///TODO: Print error
+        PRINT_ERROR(MSG_ERROR_SYSCALL, "sendto");
         return INVSYSCALL;
     }
 

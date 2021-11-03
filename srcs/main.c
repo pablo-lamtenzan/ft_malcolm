@@ -28,7 +28,7 @@ int	main(int ac, const char* av[])
 
 	if ((st = parse_args(ac, ++av, &info)) != SUCCESS)
 		goto error;
-	av += MINARGNUM; // for futher implementation in case there are optional arguments
+	av += MINARGNUM;
 	if ((st = init_rawsock(&info, av != NULL)) != SUCCESS)
 		goto error;
 
@@ -37,7 +37,7 @@ int	main(int ac, const char* av[])
 	|| signal(SIGTERM, &terminate) == SIG_ERR
 	|| signal(SIGHUP, &terminate) == SIG_ERR)
 	{
-		///TODO: Print some error
+		PRINT_ERROR(MSG_ERROR_SYSCALL, "signal");
 		st = INVSYSCALL;
 		goto error;
 	}

@@ -29,11 +29,6 @@ static err_t handle_incoming_arp(uint16_t protocol, in_addr_t addr, proginfo_t* 
 		else
 			st = spoof_router(info);
 	}
-	else
-	{
-		///TODO: Print some error
-		st = INVPACKETLEN;
-	}
 	return st;
 }
 
@@ -48,7 +43,7 @@ static err_t look_for_arp_packets(proginfo_t* info)
 
 	if (recvbytes < 0)
 	{
-		///TODO: Print some error
+		PRINT_ERROR(MSG_ERROR_SYSCALL, "recvfrom");
 		st = INVSYSCALL;
 		goto error;
 	}
@@ -70,12 +65,12 @@ static err_t forward_packet(int sockfd, uint8_t* const packet, ssize_t packetlen
 
     if (sentbytes < 0)
     {
-        ///TODO: Print some error
+        PRINT_ERROR(MSG_ERROR_SYSCALL, "sendto");
         st = INVSYSCALL;
     }
     else if (sentbytes != packetlen)
     {
-        ///TODO: Print something like: "bytes sent != received exit"
+        PRINT_ERROR(__progname "%s\n", ": error: forwarded packet is corrupted. Unpoison and exit.");
         st = INVPACKETLEN;
     }
     return st;
@@ -110,7 +105,7 @@ err_t   man_of_the_midle(const char* av[], const proginfo_t* const info, volatil
 	/* Make ARP socket non blocking for intercept incoming ARP packets */
 	if (setsockopt(info->sockarp, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0)
 	{
-		///TODO: Print some err
+		PRINT_ERROR(MSG_ERROR_SYSCALL, "setsockopt");
 		st = INVSYSCALL;
 		goto error;
 	}
@@ -119,7 +114,7 @@ err_t   man_of_the_midle(const char* av[], const proginfo_t* const info, volatil
     {
         if ((recvbytes = recvfrom(info->sockip, buff, sizeof(buff) / sizeof(*buff), 0, &sinfo, sizeof(sinfo))) < 0)
         {
-            ///TODO: Some error msg
+            PRINT_ERROR(MSG_ERROR_SYSCALL, "recvfrom");
             st = INVSYSCALL;
             goto error;
         }
