@@ -97,6 +97,11 @@ err_t   parse_optional_args(const char* av[], proginfo_t* const info, bool* cons
 		goto error;
 	}
 
+    (*(struct sockaddr_in*)&info->router.addr) = (struct sockaddr_in){
+        .sin_family = AF_INET,
+        .sin_addr = ip,
+    };
+
 error:
 	return st;
 }
