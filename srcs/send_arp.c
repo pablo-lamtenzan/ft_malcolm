@@ -44,8 +44,8 @@ err_t send_arp_request_to_target(const proginfo_t *const info)
         .arp_op = htons(ARP_REQUEST),
     };
 
-    ft_memcpy(erap.arp_sha, info->mymachine.mac, SIZEOFMAC);
-    ft_memcpy(erap.arp_spa, info->mymachine.ip, SIZEOFIP);
+    ft_memcpy(earp.arp_sha, info->mymachine.mac, SIZEOFMAC);
+    ft_memcpy(earp.arp_spa, info->mymachine.ip, SIZEOFIP);
     ft_memcpy(earp.arp_tpa, info->target.ip, SIZEOFIP);
 
     return send_arp(info->sockarp, (const struct sockaddr *)&info->target.addr,
@@ -63,8 +63,8 @@ err_t send_arp_request_to_router(const proginfo_t *const info)
         .arp_op = htons(ARP_REQUEST),
     };
 
-    ft_memcpy(erap.arp_sha, info->mymachine.mac, SIZEOFMAC);
-    ft_memcpy(erap.arp_spa, info->mymachine.ip, SIZEOFIP);
+    ft_memcpy(earp.arp_sha, info->mymachine.mac, SIZEOFMAC);
+    ft_memcpy(earp.arp_spa, info->mymachine.ip, SIZEOFIP);
     ft_memcpy(earp.arp_tpa, info->router.ip, SIZEOFIP);
 
     return send_arp(info->sockarp, (const struct sockaddr *)&info->target.addr,
@@ -82,8 +82,8 @@ err_t send_arp_reply_to_target(const proginfo_t *const info)
         .arp_op = htons(ARP_REPLY),
     };
 
-    ft_memcpy(erap.arp_sha, info->mymachine.mac, SIZEOFMAC);
-    ft_memcpy(erap.arp_spa, info->mymachine.ip, SIZEOFIP);
+    ft_memcpy(earp.arp_sha, info->mymachine.mac, SIZEOFMAC);
+    ft_memcpy(earp.arp_spa, info->mymachine.ip, SIZEOFIP);
     ft_memcpy(earp.arp_tha, info->target.mac, SIZEOFMAC);
     ft_memcpy(earp.arp_tpa, info->target.ip, SIZEOFIP);
 
@@ -102,8 +102,8 @@ err_t spoof_router(const proginfo_t *const info)
         .arp_op = htons(ARP_REPLY),
     };
 
-    ft_memcpy(erap.arp_sha, info->mymachine.mac, SIZEOFMAC);
-    ft_memcpy(erap.arp_spa, info->target.ip, SIZEOFIP);
+    ft_memcpy(earp.arp_sha, info->mymachine.mac, SIZEOFMAC);
+    ft_memcpy(earp.arp_spa, info->target.ip, SIZEOFIP);
     ft_memcpy(earp.arp_tha, info->router.mac, SIZEOFMAC);
     ft_memcpy(earp.arp_tpa, info->router.ip, SIZEOFIP);
 
@@ -122,8 +122,8 @@ err_t spoof_target(const proginfo_t *const info)
         .arp_op = htons(ARP_REPLY),
     };
 
-    ft_memcpy(erap.arp_sha, info->mymachine.mac, SIZEOFMAC);
-    ft_memcpy(erap.arp_spa, info->router.ip, SIZEOFIP);
+    ft_memcpy(earp.arp_sha, info->mymachine.mac, SIZEOFMAC);
+    ft_memcpy(earp.arp_spa, info->router.ip, SIZEOFIP);
     ft_memcpy(earp.arp_tha, info->target.mac, SIZEOFMAC);
     ft_memcpy(earp.arp_tpa, info->target.ip, SIZEOFIP);
 
@@ -142,8 +142,8 @@ err_t reset_arp_target(const proginfo_t *const info)
         .arp_op = htons(ARP_REPLY),
     };
 
-    ft_memcpy(erap.arp_sha, info->router.mac, SIZEOFMAC);
-    ft_memcpy(erap.arp_spa, info->router.ip, SIZEOFIP);
+    ft_memcpy(earp.arp_sha, info->router.mac, SIZEOFMAC);
+    ft_memcpy(earp.arp_spa, info->router.ip, SIZEOFIP);
     ft_memcpy(earp.arp_tha, info->target.mac, SIZEOFMAC);
     ft_memcpy(earp.arp_tpa, info->target.ip, SIZEOFIP);
 
@@ -162,8 +162,8 @@ err_t reset_arp_router(const proginfo_t *const info)
         .arp_op = htons(ARP_REPLY),
     };
 
-    ft_memcpy(erap.arp_sha, info->target.mac, SIZEOFMAC);
-    ft_memcpy(erap.arp_spa, info->target.ip, SIZEOFIP);
+    ft_memcpy(earp.arp_sha, info->target.mac, SIZEOFMAC);
+    ft_memcpy(earp.arp_spa, info->target.ip, SIZEOFIP);
     ft_memcpy(earp.arp_tha, info->router.mac, SIZEOFMAC);
     ft_memcpy(earp.arp_tpa, info->router.ip, SIZEOFIP);
 

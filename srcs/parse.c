@@ -104,8 +104,6 @@ err_t   parse_optional_args(const char* av[], proginfo_t* const info, bool* cons
         .sin_addr = ip,
     };
 
-
-
 error:
 	return st;
 }

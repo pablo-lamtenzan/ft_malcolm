@@ -30,7 +30,7 @@ err_t   mandatory_requests(const proginfo_t* const info)
         sizeof(buff) / sizeof(*buff),
         0,
         &saddr,
-        sizeof(saddr)
+        (socklen_t[]){sizeof(saddr)}
     );
 
     if (recvbytes < 0)
@@ -44,9 +44,9 @@ err_t   mandatory_requests(const proginfo_t* const info)
 
     // 2.3) Print received hardware address & ip address
     printf("%s", "\tmac address of request: ");
-    PRINT_MAC(arp.arp_sha, true);
+    PRINT_MAC(arp->arp_sha, true);
     printf("%s", "\tIP address of request:");
-    PRINT_IP(arp_tpa, true);
+    PRINT_IP(arp->arp_tpa, true);
 
     // 3) Send ARP REPLY to target
     printf("%s\n", "Now sending an ARP reply to the target address with spoofed source, please wait...");

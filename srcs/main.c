@@ -1,5 +1,6 @@
 
 # include <ft_malcolm.h>
+# include <arp.h>
 
 # include <unistd.h>
 # include <stdlib.h>
@@ -10,7 +11,7 @@
 volatile sig_atomic_t	unpoison = 0;
 const proginfo_t*		ginfoptr;
 
-__attribute__ ((nonreturn))
+//__attribute__ ((nonreturn))
 static void terminate()
 {
 	if (unpoison != 0)
@@ -54,7 +55,7 @@ int	main(int ac, const char* av[])
 	if (av == NULL)
 		st = mandatory_requests((const proginfo_t*)&info);
 	else
-		st = man_of_the_middle(av, (const proginfo_t*)&info, &unpoison);
+		st = man_in_the_middle(av, (const proginfo_t*)&info, &unpoison);
 error:
 	terminate();
 	return st;

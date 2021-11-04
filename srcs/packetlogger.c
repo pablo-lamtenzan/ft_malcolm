@@ -69,11 +69,10 @@
 \t-psh (uint16_t:1): %hhu\n\
 \t-ack (uint16_t:1): %hu\n\
 \t-urg (uint16_t:1): %hhu\n\
-\t-ece (uint16_t:1): %hhu\n\
-\t-cwr (uint16_t:1): %hhu\n\
+\t-res2 (uint16_t:2): %hhu\n\
 \t-window (uint16_t): %hu\n\
 \t-check (uint16_t): %hu\n\
-\t-urg_prt (uint16_t): %hu\n\n",													\		
+\t-urg_prt (uint16_t): %hu\n\n",													\
 		(tcp).doff,																	\
 		(tcp).source,																\
 		(tcp).dest,																	\
@@ -87,8 +86,7 @@
 		(tcp).psh,																	\
 		(tcp).ack,																	\
 		(tcp).urg,																	\
-		(tcp).ece,																	\
-		(tcp).cwr,																	\
+		(tcp).res2,																	\
 		(tcp).window,																\
 		(tcp).check,																\
 		(tcp).urg_ptr)																\
@@ -124,7 +122,7 @@
 
 # define PRINT_PAYLOAD(fd, payload, payloadlen)										\
 		for (ssize_t i = 0 ; i < (payloadlen) ; i++)								\
-			dprinf((fd), "[%5ld]={dec: %3hhd, udec: %3hhu, hex: %2x, ascii: %c}\n",	\
+			dprintf((fd), "[%5ld]={dec: %3hhd, udec: %3hhu, hex: %2x, ascii: %c}\n",	\
 			i, (payload)[i], (payload)[i], (payload)[i],(payload)[i]);				\
 			write((fd), "\nraw data: ", sizeof("\nraw data: ") - 1);				\
 			write((fd), (payload), (payloadlen));									\
