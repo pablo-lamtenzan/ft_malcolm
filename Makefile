@@ -1,4 +1,4 @@
-NAME		=		ft_ping
+NAME		=		ft_malcolm
 OBJDIR		=		bin_objs
 CC			=		/usr/bin/gcc
 RM			=		/bin/rm
