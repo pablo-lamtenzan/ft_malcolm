@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  one:
+    build: .
+    networks:
+      - victims
+
+  two:
+    build: .
+    networks:
+      - victims
+
+  three:
+    build: .
+    networks:
+      - victims
+
+networks:
+  victims: {}
+
+volumes:
+  sources:

@@ -12,7 +12,9 @@ $(addprefix includes/,\
 SRCS	=\
 $(addprefix srcs/,\
 	$(addprefix ftlibc/,\
+		ft_strtol.c\
 		memcpy.c\
+		memmaccpy.c\
 		memset.c\
 		strncmp.c\
 	)\
