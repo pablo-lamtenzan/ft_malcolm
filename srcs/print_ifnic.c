@@ -22,7 +22,7 @@ err_t printf_ifnic()
     {
         static const char eth0[] = "eth0";
 
-        if (ft_strncmp(eth0, i->ifa_name, sizeof(eth0) - 1) == 0)
+        if (ft_strncmp(eth0, i->ifa_name, sizeof(eth0)) == 0)
         {
             ptr = i->ifa_name;
             break ;

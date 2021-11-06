@@ -4,6 +4,10 @@
 
 # include <netinet/if_ether.h>
 # include <stdio.h>
+# include <sys/time.h>
+
+# include <string.h> // debug
+# include <errno.h>
 
 err_t   mandatory_requests(const proginfo_t* const info)
 {
@@ -21,6 +25,17 @@ err_t   mandatory_requests(const proginfo_t* const info)
 
     printf("%s\n", "An ARP request has been broadcast.");
 
+    struct timeval timeout = (struct timeval){
+        .tv_sec = 5,
+        .tv_usec= 0
+    };
+    if (setsockopt(info->sockarp, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0)
+    {
+        PRINT_ERROR(MSG_ERROR_SYSCALL, "setsockopt");
+        st = INVSYSCALL;
+        goto error;
+    }
+
     // 2.2) Receive ARP REPLY form target
     uint8_t buff[255];
     struct sockaddr saddr;
@@ -35,8 +50,17 @@ err_t   mandatory_requests(const proginfo_t* const info)
 
     if (recvbytes < 0)
     {
-        PRINT_ERROR(MSG_ERROR_SYSCALL, "recvfrom");
-        st = INVSYSCALL;
+        if (errno == EAGAIN)
+        {
+            PRINT_ERROR(__progname ": Timeout execeed for ARP request. Is host `%s\' in the network ? "
+                "Is `%s\' the computer's MAC address ?\n", info->target.ip, info->mymachine.mac);
+            st = TIMEOUT;
+        }
+        else
+        {
+            PRINT_ERROR(MSG_ERROR_SYSCALL, "recvfrom");
+            st = INVSYSCALL;
+        }
         goto error;
     }
 
@@ -45,8 +69,8 @@ err_t   mandatory_requests(const proginfo_t* const info)
     // 2.3) Print received hardware address & ip address
     printf("%s", "\tmac address of request: ");
     PRINT_MAC(arp->arp_sha, true);
-    printf("%s", "\tIP address of request:");
-    PRINT_IP(arp->arp_tpa, true);
+    printf("%s", "\tIP address of request: ");
+    PRINT_IP(arp->arp_spa, true);
 
     // 3) Send ARP REPLY to target
     printf("%s\n", "Now sending an ARP reply to the target address with spoofed source, please wait...");

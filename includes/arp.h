@@ -14,12 +14,12 @@
 # define ETHER_BROADCAST_MAC (uint8_t[SIZEOFMAC]){ 0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF }
 
 # define PRINT_MAC(x, endl) (													\
-		printf("%x:%x:%x:%x:%x:%x%s",											\
+		printf("%.2x:%.2x:%.2x:%.2x:%.2x:%.2x%s",											\
 			(x)[0], (x)[1], (x)[2], (x)[3], (x)[4], (x)[5], (endl) ? "\n" : "")	\
 	)
 
 # define PRINT_IP(x, endl) (													\
-		printf("%x:%x:%x:%x%s",													\
+		printf("%02d:%02d:%02d:%02d%s",													\
 			(x)[0], (x)[1], (x)[2], (x)[3], endl ? "\n" : "")					\
 	)
 
