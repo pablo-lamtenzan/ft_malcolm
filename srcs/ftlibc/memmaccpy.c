@@ -3,9 +3,9 @@
 void* memmaccpy(void* dest, const char* strmac)
 {
     u_int8_t* d = (u_int8_t*)dest;
-    u_int8_t  s[17] = {0};
+    u_int8_t  s[18] = {0};
 
-    ft_memcpy(s, strmac, sizeof(s) / sizeof(*s));
+    ft_memcpy(s, strmac, (sizeof(s) / sizeof(*s)) - 1);
 
     s[2] = 0;
     s[5] = 0;

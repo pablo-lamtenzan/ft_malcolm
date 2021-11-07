@@ -67,11 +67,6 @@ err_t   parse_args(int ac, const char* av[], proginfo_t* const info)
         }
     }
 
-    // (*(struct sockaddr_in*)&info->target.addr) = (struct sockaddr_in){
-    //     .sin_family = AF_PACKET,
-    //     .sin_addr = ip,
-    // };
-
     info->mymachine.ip = av[0];
     info->mymachine.mac = av[1];
     info->target.ip = av[2];
@@ -83,8 +78,6 @@ error:
 
 err_t   parse_optional_args(const char* av[], proginfo_t* const info, bool* const isstdout)
 {
-    printf("[DEBUG] Parse optional args\n");
-
     err_t st = SUCCESS;
 	in_addr_t ip;
 
@@ -110,11 +103,6 @@ err_t   parse_optional_args(const char* av[], proginfo_t* const info, bool* cons
 		st = INVARG;
 		goto error;
 	}
-
-    (*(struct sockaddr_in*)&info->router.addr) = (struct sockaddr_in){
-        .sin_family = AF_INET,
-        .sin_addr = ip,
-    };
 
 error:
 	return st;

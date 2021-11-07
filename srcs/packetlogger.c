@@ -142,6 +142,9 @@ void log_content(uint8_t* const content, ssize_t contentlen, bool isstdout)
 
 	int logfd;
 
+	printf(".");
+	fflush(stdout);
+
 	if (isstdout == false)
 	{
 		if (openonce == false)

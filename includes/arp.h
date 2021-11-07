@@ -14,19 +14,20 @@
 # define ETHER_BROADCAST_MAC (uint8_t[SIZEOFMAC]){ 0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF }
 
 # define PRINT_MAC(x, endl) (													\
-		printf("%.2x:%.2x:%.2x:%.2x:%.2x:%.2x%s",											\
+		printf("%.2x:%.2x:%.2x:%.2x:%.2x:%.2x%s",								\
 			(x)[0], (x)[1], (x)[2], (x)[3], (x)[4], (x)[5], (endl) ? "\n" : "")	\
 	)
 
 # define PRINT_IP(x, endl) (													\
-		printf("%02d:%02d:%02d:%02d%s",													\
+		printf("%02d:%02d:%02d:%02d%s",											\
 			(x)[0], (x)[1], (x)[2], (x)[3], endl ? "\n" : "")					\
 	)
 
 err_t   send_arp_request_to_target(const proginfo_t* const info);
-err_t   send_arp_request_to_router(const proginfo_t* const info);
 err_t   send_arp_reply_to_target(const proginfo_t* const info);
 
+err_t	send_request_before_spoof_router(const proginfo_t *const info);
+err_t	send_request_before_spoof_target(const proginfo_t *const info);
 err_t   spoof_router(const proginfo_t* const info);
 err_t   spoof_target(const proginfo_t* const info);
 err_t	reset_arp_target(const proginfo_t* const info);

