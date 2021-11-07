@@ -111,7 +111,7 @@
 \t-code (uint8_t): %hhu\n\
 \t-checksum (unt16_t): %hu\n\
 \t-id | __glibbc_reserved (uint16_t): %hu\n\
-\t-sequece | mtu (uint16_t): %hu\n",												\
+\t-sequence | mtu (uint16_t): %hu\n",												\
 		sizeof(icp),																\
 		(icp).type,																	\
 		(icp).code,																	\
@@ -122,23 +122,24 @@
 
 # define PRINT_PAYLOAD(fd, payload, payloadlen)										\
 		for (ssize_t i = 0 ; i < (payloadlen) ; i++)								\
-			dprintf((fd), "[%5ld]={dec: %3hhd, udec: %3hhu, hex: %2x, ascii: %c}\n",	\
+			dprintf((fd), "[%5ld]={dec: %3hhd, udec: %3hhu, hex: %2x, ascii: %c}\n",\
 			i, (payload)[i], (payload)[i], (payload)[i],(payload)[i]);				\
 			write((fd), "\nraw data: ", sizeof("\nraw data: ") - 1);				\
 			write((fd), (payload), (payloadlen));									\
 			write((fd), "\n", sizeof("\n") - 1);
 
-# define PRINT_START_PACKET(fd, len) (												\
-		dprintf(fd, "############ START PACKET (%ld) ############\n\n", len)		\
+# define PRINT_START_PACKET(fd, count, len) (										\
+		dprintf(fd, "############ START PACKET #%lu (%ld) ############\n\n", count, len)	\
 )
 
-# define PRINT_END_PACKET(fd, len) (												\
-		dprintf(fd, "\n\n############ END PACKET (%ld) ############\n\n", len)		\
+# define PRINT_END_PACKET(fd, count, len) (												\
+		dprintf(fd, "\n\n############ END PACKET #%lu (%ld) ############\n\n", count, len)	\
 )
 
 void log_content(uint8_t* const content, ssize_t contentlen, bool isstdout)
 {
 	static bool openonce = false;
+	static uint64_t count = 0;
 
 	int logfd;
 
@@ -157,11 +158,11 @@ void log_content(uint8_t* const content, ssize_t contentlen, bool isstdout)
 	else
 		logfd = STDOUT_FILENO;
 
-	PRINT_START_PACKET(logfd, contentlen);
+	PRINT_START_PACKET(logfd, ++count, contentlen);
 
 	if (contentlen < sizeof(struct ethhdr))
 	{
-		PRINT_END_PACKET(logfd, contentlen);
+		PRINT_END_PACKET(logfd, count, contentlen);
 		return ;
 	}
 
@@ -169,9 +170,9 @@ void log_content(uint8_t* const content, ssize_t contentlen, bool isstdout)
 	PRINT_ETHHDR(logfd, *eth);
 
 	if (contentlen < sizeof(*eth) + sizeof(struct iphdr)
-	|| eth->h_proto != ETH_P_IP)
+	|| eth->h_proto != ntohs(ETH_P_IP))
 	{
-		PRINT_END_PACKET(logfd, contentlen);
+		PRINT_END_PACKET(logfd, count, contentlen);
 		return ;
 	}
 
@@ -186,7 +187,7 @@ void log_content(uint8_t* const content, ssize_t contentlen, bool isstdout)
 		case IPPROTO_TCP:
 			if (contentlen < sizeof(*eth) + iphl + sizeof(struct tcphdr))
 			{
-				PRINT_END_PACKET(logfd, contentlen);
+				PRINT_END_PACKET(logfd, count, contentlen);
 				return ;
 			}
 			const struct tcphdr* const tcp = (const struct tcphdr*)(content + sizeof(*eth) + iphl);
@@ -197,7 +198,7 @@ void log_content(uint8_t* const content, ssize_t contentlen, bool isstdout)
 		case IPPROTO_UDP:
 			if (contentlen < sizeof(*eth) + iphl + sizeof(struct udphdr))
 			{
-				PRINT_END_PACKET(logfd, contentlen);
+				PRINT_END_PACKET(logfd, count, contentlen);
 				return ;
 			}
 			const struct udphdr* const udp = (const struct udphdr*)(content + sizeof(*eth) + iphl);
@@ -208,12 +209,12 @@ void log_content(uint8_t* const content, ssize_t contentlen, bool isstdout)
 		case IPPROTO_ICMP:
 			if (contentlen < sizeof(*eth) + iphl + sizeof(struct icmphdr))
 			{
-				PRINT_END_PACKET(logfd, contentlen);
+				PRINT_END_PACKET(logfd, count, contentlen);
 				return ;
 			}
 			const struct icmphdr* const icp = (const struct icmphdr*)(content + sizeof(*eth) + iphl);
 			PRINT_ICMPHDR(logfd, *icp);
-			PRINT_END_PACKET(logfd, contentlen);
+			PRINT_END_PACKET(logfd, count, contentlen);
 			return ;
 
 		default:
@@ -232,5 +233,5 @@ void log_content(uint8_t* const content, ssize_t contentlen, bool isstdout)
 		close(logfd);
 		openonce = false;
 	}
-	PRINT_END_PACKET(logfd, contentlen);
+	PRINT_END_PACKET(logfd, count, contentlen);
 }

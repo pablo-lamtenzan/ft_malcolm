@@ -8,7 +8,7 @@
 err_t init_rawsock(proginfo_t* const info, bool extended)
 {
     if ((info->sockarp = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ARP))) < 0
-    || (extended && (info->sockip = socket(AF_INET, SOCK_RAW, htons(ETH_P_IP))) < 0))
+    || (extended && (info->sockip = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_IP))) < 0))
     {
         PRINT_ERROR(MSG_ERROR_SYSCALL, "socket");
         return INVSYSCALL;

