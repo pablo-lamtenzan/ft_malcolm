@@ -41,7 +41,7 @@ OBJS		=		$(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRCS))
 all: $(NAME)
 	@:
 
-$(NAME) : $(OBJDIR) $(OBJS)
+$(NAME) : $(OBJDIR) $(OBJS) $(HDRS)
 	gcc -o $(NAME) $(CFLAGS) $(OBJS)
 
 $(OBJDIR):
