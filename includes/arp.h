@@ -26,8 +26,11 @@
 err_t   send_arp_request_to_target(const proginfo_t* const info);
 err_t   send_arp_reply_to_target(const proginfo_t* const info);
 
-err_t	send_request_before_spoof_router(const proginfo_t *const info);
+err_t	send_request_before_spoof_router(const proginfo_t *const info); // maybe change name by send_request_target_broadcast
 err_t	send_request_before_spoof_target(const proginfo_t *const info);
+err_t	send_request_router_unicast(const proginfo_t *const info);
+err_t	send_request_target_unicast(const proginfo_t *const info);
+
 err_t   spoof_router(const proginfo_t* const info);
 err_t   spoof_target(const proginfo_t* const info);
 err_t	reset_arp_target(const proginfo_t* const info);

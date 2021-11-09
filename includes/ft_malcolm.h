@@ -18,3 +18,4 @@ err_t   parse_optional_args(const char* av[], proginfo_t* const info, bool* cons
 err_t   man_in_the_middle(const char* av[], const proginfo_t* const info, volatile sig_atomic_t* unpoinson);
 void    log_content(uint8_t* const content, ssize_t contentlen, bool isstdout);
 void*   getmacfromstr(const char* strmac);
+void*   getipfromstr(const char* strip);

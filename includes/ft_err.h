@@ -14,6 +14,8 @@ typedef enum	err
 }				err_t;
 
 # define PRINT_ERROR(x, args...) (dprintf(2, x, args))
+# define PRINT_INFO(x...) (dprintf(1, x))
+
 
 #ifndef __progname
 # define __progname "ft_malcolm"

@@ -25,7 +25,7 @@
 		(eth).h_dest[3], (eth).h_dest[4], (eth).h_dest[5],							\
 		(eth).h_source[0], (eth).h_source[1], (eth).h_source[2],					\
 		(eth).h_source[3], (eth).h_source[4], (eth).h_source[5],					\
-		(eth).h_proto)																\
+		ntohs((eth).h_proto))																\
 )
 
 # define PRINT_IPHDR(fd, ip) (														\
@@ -74,9 +74,9 @@
 \t-check (uint16_t): %hu\n\
 \t-urg_prt (uint16_t): %hu\n\n",													\
 		(tcp).doff,																	\
-		(tcp).source,																\
-		(tcp).dest,																	\
-		(tcp).seq,																	\
+		ntohs((tcp).source),																\
+		ntohs((tcp).dest),																	\
+		ntohs((tcp).seq),																	\
 		(tcp).ack_seq,																\
 		(tcp).res1,																	\
 		(tcp).doff,																	\
@@ -99,8 +99,8 @@
 \t-len (uint16_t): %hu\n\
 \t-check (uint16_t): %hu\n\n",														\
 		sizeof(udp),																	\
-		(udp).source,																\
-		(udp).dest,																	\
+		ntohs((udp).source),																\
+		ntohs((udp).dest),																	\
 		(udp).len,																	\
 		(udp).check)																\
 )
@@ -116,8 +116,8 @@
 		(icp).type,																	\
 		(icp).code,																	\
 		(icp).checksum,																\
-		(icp).un.echo.id,																	\
-		(icp).un.echo.sequence)																\
+		ntohs((icp).un.echo.id),																	\
+		ntohs((icp).un.echo.sequence))																\
 )
 
 # define PRINT_PAYLOAD(fd, payload, payloadlen)										\
@@ -138,7 +138,6 @@
 
 void log_content(uint8_t* const content, ssize_t contentlen, bool isstdout)
 {
-	static bool openonce = false;
 	static uint64_t count = 0;
 
 	int logfd;
@@ -148,12 +147,8 @@ void log_content(uint8_t* const content, ssize_t contentlen, bool isstdout)
 
 	if (isstdout == false)
 	{
-		if (openonce == false)
-		{
-			if ((logfd = open(DEFAULTLOGNAME, O_CREAT | O_WRONLY | O_APPEND)) < 0)
-				return ;
-			openonce = true;
-		}
+		if ((logfd = open(DEFAULTLOGNAME, O_CREAT | O_WRONLY | O_APPEND)) < 0)
+			return ;
 	}
 	else
 		logfd = STDOUT_FILENO;
@@ -214,7 +209,9 @@ void log_content(uint8_t* const content, ssize_t contentlen, bool isstdout)
 			}
 			const struct icmphdr* const icp = (const struct icmphdr*)(content + sizeof(*eth) + iphl);
 			PRINT_ICMPHDR(logfd, *icp);
+			
 			PRINT_END_PACKET(logfd, count, contentlen);
+
 			return ;
 
 		default:
@@ -229,9 +226,6 @@ void log_content(uint8_t* const content, ssize_t contentlen, bool isstdout)
 	}
 
 	if (isstdout == false)
-	{
 		close(logfd);
-		openonce = false;
-	}
 	PRINT_END_PACKET(logfd, count, contentlen);
 }

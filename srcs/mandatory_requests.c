@@ -23,7 +23,7 @@ err_t   mandatory_requests(const proginfo_t* const info)
     if ((st = send_arp_request_to_target(info)) != SUCCESS)
         goto error;
 
-    printf("%s\n", "An ARP request has been broadcast.");
+    PRINT_INFO("%s\n", "An ARP request has been broadcast.");
 
     struct timeval timeout = (struct timeval){
         .tv_sec = 5,
@@ -67,16 +67,16 @@ err_t   mandatory_requests(const proginfo_t* const info)
     const struct ether_arp* const arp = (const struct ether_arp*)(buff + sizeof(struct ethhdr));
 
     // 2.3) Print received hardware address & ip address
-    printf("%s", "\tmac address of request: ");
+    PRINT_INFO("%s", "\tmac address of request: ");
     PRINT_MAC(arp->arp_sha, true);
-    printf("%s", "\tIP address of request: ");
+    PRINT_INFO("%s", "\tIP address of request: ");
     PRINT_IP(arp->arp_spa, true);
 
     // 3) Send ARP REPLY to target
-    printf("%s\n", "Now sending an ARP reply to the target address with spoofed source, please wait...");
+    PRINT_INFO("%s\n", "Now sending an ARP reply to the target address with spoofed source, please wait...");
     if ((st = send_arp_reply_to_target(info)) != SUCCESS)
         goto error;
-    printf("%s\n", "Sent an ARP reply packet, you may now check the arp table on the target.\nExiting program...");
+    PRINT_INFO("%s\n", "Sent an ARP reply packet, you may now check the arp table on the target.\nExiting program...");
 
 error:
     return st;
