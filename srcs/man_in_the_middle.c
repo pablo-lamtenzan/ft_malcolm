@@ -32,10 +32,10 @@
     // SOLUTION: How is possible that:
     //      <target1> -- ping --> <target2> (somehow)
 
-///MAYBE: Is only ping that detect my mitm (but i can bybass it ignoring icmp forward)
+///MAYBE: Is only ping that detect my mitm (but maybe i can bybass it ignoring icmp forward)
 
 ///TODO: Try to bypass ping command detection
-///TODO: Test better netcat tcp
+/// maybe in a future, don't have time for this right now, must proceed with others projects
 
 __attribute__ ((always_inline))
 static inline err_t handle_broadcast_arp(const struct ethhdr* const eth, proginfo_t *const info,
@@ -135,21 +135,6 @@ static err_t handle_arp_packets(proginfo_t *info, const uint8_t* const router_ma
             printf("[DEBUG] ARP REQUEST FROM ME <---- (looking for me) \n");
             goto error;
         }
-
-        // if (ntohs(protocol) == ARP_REQUEST)
-        // {
-        //     printf("DEBUG: ARP REQUEST from mac: <");
-        //     PRINT_MAC(arp->arp_sha, 0);
-        //     printf("> to mac: <");
-        //     PRINT_MAC(arp->arp_tha, 0);
-        //     printf("> looking for ip: <");
-        //     PRINT_IP(arp->arp_tpa, 0);
-        //     printf("> (eth src: <");
-        //     PRINT_MAC(eth->h_source, 0);
-        //     printf(">, eth: dest: <");
-        //     PRINT_MAC(eth->h_dest, 0);
-        //     printf(">)\n");
-        // }
 
         st = corrupt_my_mac_in_router(info);
         if (st != SUCCESS)

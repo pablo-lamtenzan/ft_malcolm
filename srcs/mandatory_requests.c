@@ -5,8 +5,6 @@
 # include <netinet/if_ether.h>
 # include <stdio.h>
 # include <sys/time.h>
-
-# include <string.h> // debug
 # include <errno.h>
 
 err_t   mandatory_requests(const proginfo_t* const info)
@@ -15,11 +13,11 @@ err_t   mandatory_requests(const proginfo_t* const info)
 
     err_t st = SUCCESS;
 
-    // 1) Print avalaible phisical interface (NIC)
+    /* 1) Print avalaible phisical interface (NIC) */
     if ((st = printf_ifnic()) != SUCCESS)
         goto error;
 
-    // 2.1) Broadcast an ARP REQUEST to the network
+    /* 2.1) Broadcast an ARP REQUEST to the network */
     if ((st = send_arp_request_to_target(info)) != SUCCESS)
         goto error;
 
@@ -36,7 +34,7 @@ err_t   mandatory_requests(const proginfo_t* const info)
         goto error;
     }
 
-    // 2.2) Receive ARP REPLY form target
+    /* 2.2) Receive ARP REPLY form target */
     uint8_t buff[255];
     struct sockaddr saddr;
     const ssize_t recvbytes = recvfrom(
@@ -66,13 +64,13 @@ err_t   mandatory_requests(const proginfo_t* const info)
 
     const struct ether_arp* const arp = (const struct ether_arp*)(buff + sizeof(struct ethhdr));
 
-    // 2.3) Print received hardware address & ip address
+    /* 2.3) Print received hardware address & ip address */
     PRINT_INFO("%s", "\tmac address of request: ");
     PRINT_MAC(arp->arp_sha, true);
     PRINT_INFO("%s", "\tIP address of request: ");
     PRINT_IP(arp->arp_spa, true);
 
-    // 3) Send ARP REPLY to target
+    /* 3) Send ARP REPLY to target */
     PRINT_INFO("%s\n", "Now sending an ARP reply to the target address with spoofed source, please wait...");
     if ((st = send_arp_reply_to_target(info)) != SUCCESS)
         goto error;
